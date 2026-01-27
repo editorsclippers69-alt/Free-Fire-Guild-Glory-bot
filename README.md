@@ -1,1 +1,0 @@
-# Free-Fire-Guild-Glory-bot
