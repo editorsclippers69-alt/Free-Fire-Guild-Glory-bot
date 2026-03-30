@@ -1,3 +1,24 @@
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+@app.route("/status")
+def status():
+    return jsonify({
+        "status": "running",
+        "message": "Your API is working"
+    })
+
+@app.route("/player")
+def player():
+    uid = request.args.get("uid")
+    return jsonify({
+        "uid": uid,
+        "status": "demo data"
+    })
+
+if __name__ == "__main__":
+    app.run()
 import threading
 import jwt
 import random
