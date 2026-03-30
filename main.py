@@ -1118,7 +1118,7 @@ class FF_CLIENT(threading.Thread):
             'Authorization': f'Bearer {JWT_TOKEN}',
             'X-Unity-Version': '2018.4.11f1',
             'X-GA': 'v1 1',
-            'ReleaseVersion': 'OB51',
+            'ReleaseVersion': 'OB48',
             'Content-Type': 'application/x-www-form-urlencoded',
             'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 9; G011A Build/PI)',
             'Host': 'client.ind.freefiremobile.com',
@@ -1171,12 +1171,12 @@ class FF_CLIENT(threading.Thread):
     def TOKEN_MAKER(self,OLD_ACCESS_TOKEN , NEW_ACCESS_TOKEN , OLD_OPEN_ID , NEW_OPEN_ID,id):
         headers = {
             'X-Unity-Version': '2018.4.11f1',
-            'ReleaseVersion': 'OB51',
+            'ReleaseVersion': 'OB48',
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-GA': 'v1 1',
             'Content-Length': '928',
             'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 7.1.2; ASUS_Z01QD Build/QKQ1.190825.002)',
-            'Host': 'loginbp.common.ggbluefox.com',
+            'Host': 'loginbp.ggblueshark.com',
             'Connection': 'Keep-Alive',
             'Accept-Encoding': 'gzip'
         }
@@ -1190,16 +1190,21 @@ class FF_CLIENT(threading.Thread):
 
         RESPONSE = requests.post(URL, headers=headers, data=Final_Payload,verify=False)
         
-        combined_timestamp, key, iv, BASE64_TOKEN = self.parse_my_message(RESPONSE.content)
-        if RESPONSE.status_code == 200:
-            if len(RESPONSE.text) < 10:
+        print(f"[DEBUG] MajorLogin Status: {RESPONSE.status_code}")
+        print(f"[DEBUG] MajorLogin Response Length: {len(RESPONSE.content)}")
+        
+        if RESPONSE.status_code == 200 and len(RESPONSE.content) > 10:
+            combined_timestamp, key, iv, BASE64_TOKEN = self.parse_my_message(RESPONSE.content)
+            if not key or not iv:
+                print(f"[DEBUG] parse_my_message failed. Raw response: {RESPONSE.content[:200]}")
                 return False
-            whisper_ip, whisper_port, online_ip, online_port =self.GET_PAYLOAD_BY_DATA(BASE64_TOKEN,NEW_ACCESS_TOKEN,1)
+            whisper_ip, whisper_port, online_ip, online_port = self.GET_PAYLOAD_BY_DATA(BASE64_TOKEN, NEW_ACCESS_TOKEN, 1)
             self.key = key
             self.iv = iv
             print(key, iv)
             return(BASE64_TOKEN, key, iv, combined_timestamp, whisper_ip, whisper_port, online_ip, online_port)
         else:
+            print(f"[DEBUG] Login failed. Response: {RESPONSE.text[:300]}")
             return False
     
     def time_to_seconds(hours, minutes, seconds):
@@ -1283,23 +1288,17 @@ threads = []
     
 if __name__ == "__main__":
     try:
-        client_thread = FF_CLIENT(id="4410724807", password="D5BC1508CD3A66DBD5ED73DAE2B09CAD6EFEE70D3C55B61F1F65B79C9A488749")
-        client_thread.start()
+        with open('spidey.txt', 'r') as f:
+            spidey_data = json.load(f)
+        uid, password = list(spidey_data.items())[0]
+        print(f"[INFO] Loading account UID: {uid}")
     except Exception as e:
-        logging.error(f"Error occurred: {e}")
+        logging.error(f"[ERROR] Failed to read spidey.txt: {e}")
+        restart_program()
 
-        client_thread = FF_CLIENT(id="4373495186", password="0A97D49FABE7231230FB86C2E25834FE17A4E2598E3CC32F79F49D4CC311D75B")
+    try:
+        client_thread = FF_CLIENT(id=uid, password=password)
         client_thread.start()
     except Exception as e:
-        logging.error(f"Error occurred: {e}")
-
-        client_thread = FF_CLIENT(id="3638575659", password="D6A25035551CB3330BDDD4FA68805AB729B3F7AEAC485809A7774B14EC4EE804")
-        client_thread.start()
-    except Exception as e:
-        logging.error(f"Error occurred: {e}")  
-
-        client_thread = FF_CLIENT(id="4422236482", password="027B505FA6FC757B7EDF84B2E3514F949896CB7EF8DFC3B0BE1B2E79FF3B0FEC")
-        client_thread.start()
-    except Exception as e:
-        logging.error(f"Error occurred: {e}")                         
+        logging.error(f"[ERROR] Client failed: {e}")
         restart_program()
